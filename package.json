@@ -16,7 +16,7 @@
     "@react-navigation/drawer": "^6.6.2",
     "@react-navigation/native": "^6.1.6",
     "@react-navigation/native-stack": "^6.9.12",
-    "expo": "~49.0.11",
+    "expo": "~48.0.10",
     "expo-linear-gradient": "~12.1.2",
     "expo-splash-screen": "^0.18.2",
     "expo-status-bar": "~1.6.0",

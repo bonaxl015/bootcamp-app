@@ -7,6 +7,7 @@ import {
   Provider as PaperProvider
 } from 'react-native-paper'
 import navigations from '@/navigators/index'
+import { globalColors } from '@/styles/colors'
 
 const Stack = createNativeStackNavigator()
 SplashScreen.preventAutoHideAsync()
@@ -16,7 +17,11 @@ setTimeout(() => {
 }, 3000)
 
 const theme = {
-  ...DefaultTheme
+  ...DefaultTheme,
+  colors: {
+    ...DefaultTheme.colors,
+    error: globalColors.error
+  }
 }
 
 const App = () => {

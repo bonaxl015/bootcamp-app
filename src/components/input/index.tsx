@@ -1,6 +1,18 @@
-import React, { useState, forwardRef } from 'react'
+import React, {
+  useState,
+  forwardRef,
+  useImperativeHandle
+} from 'react'
 import { TextInput, TextInputProps } from 'react-native-paper'
-import { View, Text, NativeSyntheticEvent, TextInputFocusEventData, TextInputChangeEventData } from 'react-native'
+import {
+  View,
+  Text,
+  NativeSyntheticEvent,
+  TextInputFocusEventData,
+  TextInputChangeEventData,
+  StyleSheet
+} from 'react-native'
+import { globalColors } from '@/styles/colors'
 
 type IRules = {
   required: boolean
@@ -9,59 +21,60 @@ type IRules = {
   validator?: (value: any) => Promise<any> | undefined
 }
 
+type IValidateTrigger = 'blur' | 'change' | undefined | IValidateTrigger[]
+
 type InputTextProps = TextInputProps & {
   rules?: IRules[]
   isValidate?: boolean
-  validateTrigger?: 'blur' | 'change' | undefined
+  validateTrigger?: IValidateTrigger
 }
 
-const InputText: React.FC<InputTextProps> = (
-  props: InputTextProps
+const Input = forwardRef((
+  props: InputTextProps,
+  ref: React.Ref<any>
 ) => {
   const {
     onBlur,
     onChange,
     validateTrigger,
-    rules,
-    value
+    rules
   } = props
   const [isError, setIsError] = useState<boolean>(false)
   const [errorMessage, setErrorMessage] = useState<string>('')
 
-  const validate = () => new Promise((resolve, reject) => {
+  const validate = (text: string) => new Promise(async resolve => {
     if (rules?.length) {
       for (const rule of rules) {
         if ('required' in rule && rule.required) {
-          if (!value) {
+          if (!text || !text.trim()) {
             setIsError(true)
             setErrorMessage(rule.message)
-            reject(rule.message)
             return
           }
         }
         if ('validator' in rule && rule.validator) {
           try {
-            rule.validator(value)
-          } catch (error) {
+            await rule.validator(text)
+          } catch (error: any) {
             setIsError(true)
-            setErrorMessage(error as string)
-            reject(error)
+            setErrorMessage(error.message)
             return
           }
         }
       }
+      setIsError(false)
+      setErrorMessage('')
       resolve(null)
     } else {
       console.error('Rules must be provided')
-      reject()
     }
   })
 
   const handleBlur = (
     e: NativeSyntheticEvent<TextInputFocusEventData>
   ) => {
-    if (validateTrigger === 'blur') {
-      validate()
+    if (validateTrigger?.includes('blur')) {
+      validate(e.nativeEvent.text)
     }
     if (onBlur) {
       onBlur?.(e)
@@ -71,32 +84,56 @@ const InputText: React.FC<InputTextProps> = (
   const handleChange = (
     e: NativeSyntheticEvent<TextInputChangeEventData>
   ) => {
-    if (validateTrigger === 'change') {
-      validate()
+    if (validateTrigger?.includes('change')) {
+      validate(e.nativeEvent.text)
     }
     if (onChange) {
       onChange?.(e)
     }
   }
 
+  useImperativeHandle(ref, () => ({
+    validate
+  }))
+
   return (
     <>
-      <TextInput
-        {...props}
-        onBlur={handleBlur}
-        onChange={handleChange}
-      />
-      {isError && (
-        <View>
-          <Text>{errorMessage}</Text>
-        </View>
-      )}
+      <View style={style.inputContainer}>
+        <TextInput
+          style={style.textInput}
+          {...props}
+          onBlur={handleBlur}
+          onChange={handleChange}
+          error={isError}
+        />
+        {isError && (
+          <View style={style.errorContainer}>
+            <Text style={style.errorText}>
+              {errorMessage}
+            </Text>
+          </View>
+        )}
+      </View>
     </>
   )
-}
+})
 
-const Input = forwardRef((props: InputTextProps, ref: React.Ref<any>) =>
-  <InputText {...props} ref={ref} />
-)
+const style = StyleSheet.create({
+  inputContainer: {
+    display: 'flex',
+    flexDirection: 'column'
+  },
+  textInput: {
+    marginBottom: 4,
+  },
+  errorContainer: {
+    margin: 0,
+    paddingHorizontal: 10
+  },
+  errorText: {
+    color: globalColors.error,
+    fontSize: 12
+  }
+})
 
 export default Input

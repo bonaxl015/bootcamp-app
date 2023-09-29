@@ -70,9 +70,16 @@ const Input = forwardRef((
     }
   })
 
+  const getErrorState = (): boolean => isError
+
+  const resetField = (): void => {
+    setIsError(false)
+    setErrorMessage('')
+  }
+
   const handleBlur = (
     e: NativeSyntheticEvent<TextInputFocusEventData>
-  ) => {
+  ): void => {
     if (validateTrigger?.includes('blur')) {
       validate(e.nativeEvent.text)
     }
@@ -83,7 +90,7 @@ const Input = forwardRef((
 
   const handleChange = (
     e: NativeSyntheticEvent<TextInputChangeEventData>
-  ) => {
+  ): void => {
     if (validateTrigger?.includes('change')) {
       validate(e.nativeEvent.text)
     }
@@ -93,7 +100,9 @@ const Input = forwardRef((
   }
 
   useImperativeHandle(ref, () => ({
-    validate
+    validate,
+    getErrorState,
+    resetField
   }))
 
   return (

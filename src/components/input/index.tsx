@@ -1,7 +1,8 @@
 import React, {
   useState,
   forwardRef,
-  useImperativeHandle
+  useImperativeHandle,
+  memo
 } from 'react'
 import { TextInput, TextInputProps } from 'react-native-paper'
 import {
@@ -145,4 +146,4 @@ const style = StyleSheet.create({
   }
 })
 
-export default Input
+export default memo(Input)

@@ -6,11 +6,11 @@ import {
   TouchableOpacity,
   SafeAreaView
 } from 'react-native'
-import { Button, TextInput } from 'react-native-paper'
+import { Button, TextInput, Snackbar } from 'react-native-paper'
 import Input from '@/components/input'
 import { emailPattern, passwordPattern } from '@/utils/patterns'
 import message from './error-message'
-// import { login } from '@/services/global/login'
+import { login, register } from '@/services/global/login'
 
 const Login: React.FC = () => {
   const [isRegister, setIsRegister] = useState<boolean>(false)
@@ -19,6 +19,10 @@ const Login: React.FC = () => {
   const [name, setName] = useState<string>('')
   const [email, setEmail] = useState<string>('')
   const [password, setPassword] = useState<string>('')
+  const [errorMessage, setErrorMessage] = useState<any>({
+    visible: false,
+    message: ''
+  })
   const emailRef = useRef<any>(null)
   const passwordRef = useRef<any>(null)
   const nameRef = useRef<any>(null)
@@ -28,16 +32,35 @@ const Login: React.FC = () => {
     setIsRegister(prevState => !prevState)
   }
 
-  const submitLoginRegister = (): void => {
-    const result = validateEmail()
-    if (!result) return
-    console.log(email)
-    console.log(password)
-    console.log(name)
-    setIsLoading(false)
+  const submitLoginRegister = async (): Promise<void> => {
+    try {
+      const result: boolean = await validateEmail()
+      let res: any
+      if (!result) return
+      setIsLoading(true)
+      const params = {
+        name: isRegister ? name : undefined,
+        email,
+        password
+      }
+      res = isRegister ? await register(params) : await login(params)
+      setIsLoading(false)
+    } catch(error: any) {
+      setErrorMessage({
+        visible: true,
+        message: error.message
+      })
+      setIsLoading(false)
+    }
   }
 
-  const validateEmail = (): boolean => {
+  const validateEmail = async (): Promise<boolean> => {
+    const promiseArr = [
+      emailRef?.current.validate(email),
+      passwordRef?.current.validate(password),
+      isRegister && nameRef?.current.validate(name)
+    ]
+    await Promise.all(promiseArr)
     if (isRegister) {
       return (
         !emailRef?.current.getErrorState() &&
@@ -60,6 +83,13 @@ const Login: React.FC = () => {
     nameRef?.current?.resetField()
   }
 
+  const dismissSnackbar = (): void => {
+    setErrorMessage({
+      visible: false,
+      message: ''
+    })
+  }
+
   return (
     <SafeAreaView style={style.container}>
       <View style={style.formView}>
@@ -75,7 +105,7 @@ const Login: React.FC = () => {
               placeholder="Name"
               value={name}
               onChangeText={value => setName(value)}
-              validateTrigger="blur"
+              validateTrigger="change"
               rules={[
                 {
                   required: true,
@@ -167,6 +197,15 @@ const Login: React.FC = () => {
           </TouchableOpacity>
         </View>
       </View>
+      <Snackbar
+        visible={errorMessage.visible}
+        onDismiss={dismissSnackbar}
+        action={{
+          label: 'Close',
+          onPress: () => dismissSnackbar(),
+        }}>
+        {errorMessage.message}
+      </Snackbar>
     </SafeAreaView>
   )
 }
